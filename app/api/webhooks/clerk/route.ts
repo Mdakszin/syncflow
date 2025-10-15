@@ -52,6 +52,7 @@ export async function POST(req: Request) {
 
   const eventType = evt.type;
 
+    // Handle the events
   if (eventType === 'user.created' || eventType === 'user.updated') {
     const { id, email_addresses, image_url, first_name, last_name } = evt.data;
 
@@ -75,6 +76,33 @@ export async function POST(req: Request) {
     } catch (error) {
       console.error("Failed to upsert user:", error);
       return NextResponse.json({ error: 'Failed to upsert user' }, { status: 500 });
+    }
+  }
+
+  // Handle Organization events
+  if (eventType === 'organization.created' || eventType === 'organization.updated') {
+    const { id, name, slug, image_url } = evt.data;
+
+    try {
+      await prisma.workspace.upsert({
+        where: { id: id },
+        create: {
+          id: id,
+          name: name,
+          slug: slug!,
+          imageUrl: image_url,
+        },
+        update: {
+          name: name,
+          slug: slug!,
+          imageUrl: image_url,
+        },
+      });
+
+      return NextResponse.json({ message: 'Organization upserted successfully' }, { status: 200 });
+    } catch (error) {
+      console.error("Failed to upsert organization:", error);
+      return NextResponse.json({ error: 'Failed to upsert organization' }, { status: 500 });
     }
   }
 
